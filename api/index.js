@@ -157,7 +157,9 @@ module.exports = async (req, res) => {
       if (!id) return error(res, 'Missing required parameter: id');
       const data = await jioGet('artist.getArtistMoreSong', { artistId: id, page, sortBy: 'popularity', sortOrder: 'desc' });
       if (!data) return error(res, 'No songs found', 404);
-      const songs = data.songs ? data.songs.map(s => parseTrack(s, decryptUrl)) : [];
+      // Response can have data.topSongs.songs or data.songs depending on page
+      const songList = data.topSongs?.songs || data.songs || [];
+      const songs = songList.map(s => parseTrack(s, decryptUrl));
       return success(res, songs);
     }
 
