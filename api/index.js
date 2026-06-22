@@ -39,17 +39,13 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ── /api/search (songs only) — uses autocomplete.get for popular results ──
+    // ── /api/search (songs only) — uses search.getResults like Termux script ──
     if (path === '/api/search') {
       const query = q.get('q');
       if (!query) return error(res, 'Missing required parameter: q');
-      const data = await jioGet('autocomplete.get', { query });
-      if (!data) return error(res, 'No results found', 404);
-      // Debug: log the structure
-      console.log('Search response keys:', Object.keys(data));
-      console.log('Songs type:', typeof data.songs, Array.isArray(data.songs));
-      const songs = data.songs?.data || data.songs || [];
-      return success(res, songs.slice(0, limit).map(parseAutocompleteTrack));
+      const data = await jioGet('search.getResults', { q: query, n: limit });
+      if (!data || !data.results) return error(res, 'No results found', 404);
+      return success(res, data.results.slice(0, limit).map(s => parseTrack(s, decryptUrl)));
     }
 
     // ── /api/search/albums ──
