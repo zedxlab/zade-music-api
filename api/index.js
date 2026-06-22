@@ -43,8 +43,9 @@ module.exports = async (req, res) => {
     if (path === '/api/search') {
       const query = q.get('q');
       if (!query) return error(res, 'Missing required parameter: q');
-      // autocomplete.get returns popular songs first (like Termux script)
-      const data = await jioGet('autocomplete.get', { query: query });
+      // Build a unique URL to bust Vercel edge cache
+      const ts = Date.now();
+      const data = await jioGet('autocomplete.get', { query: query, _t: ts });
       if (!data) return error(res, 'No results found', 404);
       const songs = data.songs?.data || [];
       return success(res, songs.slice(0, limit).map(parseAutocompleteTrack));
