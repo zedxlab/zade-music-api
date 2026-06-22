@@ -4,8 +4,7 @@
   "description": "JioSaavn Music API — Search, Stream, Lyrics — by @zade4everbot",
   "main": "api/index.js",
   "scripts": {
-    "start": "vercel dev",
-    "build": "echo 'no build needed'",
+    "start": "node api/index.js",
     "deploy": "vercel deploy --prod"
   },
   "engines": {
