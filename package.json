@@ -1,0 +1,14 @@
+{
+  "name": "zade-jiosaavn-api",
+  "version": "1.0.0",
+  "description": "JioSaavn Music API — Search, Stream, Lyrics — by @zade4everbot",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
