@@ -22,30 +22,57 @@ module.exports = async (req, res) => {
         version: '1.0.0',
         description: 'Music Streaming API — Search, Stream 320kbps, Lyrics, Albums, Artists, Playlists, Trending',
         endpoints: {
-          search: '/api/search?q=kesariya&limit=10',
+          search: '/api/search?q=kesariya&limit=10 (songs only)',
+          searchAlbums: '/api/search/albums?q=rockstar&limit=10',
+          searchArtists: '/api/search/artists?q=arijit&limit=10',
+          searchPlaylists: '/api/search/playlists?q=bollywood&limit=10',
           song: '/api/song?id=rjkrTnma',
           lyrics: '/api/lyrics?id=rjkrTnma',
           album: '/api/album?id=1045274',
-          albums: '/api/albums?q=rockstar&limit=10',
           artist: '/api/artist?id=459320',
-          artists: '/api/artists?q=arijit&limit=10',
           artistSongs: '/api/artist/songs?id=459320&page=0',
           artistAlbums: '/api/artist/albums?id=459320&page=0',
           playlist: '/api/playlist?id=<id>',
-          playlists: '/api/playlists?q=bollywood&limit=10',
           trending: '/api/trending',
           browse: '/api/browse',
         },
       });
     }
 
-    // ── /api/search ──
+    // ── /api/search (songs only) ──
     if (path === '/api/search') {
       const query = q.get('q');
       if (!query) return error(res, 'Missing required parameter: q');
       const data = await jioGet('search.getResults', { q: query, n: limit });
       if (!data || !data.results) return error(res, 'No results found', 404);
       return success(res, data.results.slice(0, limit).map(s => parseTrack(s, decryptUrl)));
+    }
+
+    // ── /api/search/albums ──
+    if (path === '/api/search/albums') {
+      const query = q.get('q');
+      if (!query) return error(res, 'Missing required parameter: q');
+      const data = await jioGet('search.getAlbumResults', { q: query, n: limit });
+      if (!data || !data.results) return error(res, 'No albums found', 404);
+      return success(res, data.results.slice(0, limit).map(s => parseAlbum(s)));
+    }
+
+    // ── /api/search/artists ──
+    if (path === '/api/search/artists') {
+      const query = q.get('q');
+      if (!query) return error(res, 'Missing required parameter: q');
+      const data = await jioGet('search.getArtistResults', { q: query, n: limit });
+      if (!data || !data.results) return error(res, 'No artists found', 404);
+      return success(res, data.results.slice(0, limit).map(s => parseArtist(s)));
+    }
+
+    // ── /api/search/playlists ──
+    if (path === '/api/search/playlists') {
+      const query = q.get('q');
+      if (!query) return error(res, 'Missing required parameter: q');
+      const data = await jioGet('search.getPlaylistResults', { q: query, n: limit });
+      if (!data || !data.results) return error(res, 'No playlists found', 404);
+      return success(res, data.results.slice(0, limit).map(s => parsePlaylist(s)));
     }
 
     // ── /api/song ──
@@ -72,12 +99,12 @@ module.exports = async (req, res) => {
     if (path === '/api/album') {
       const id = q.get('id');
       if (!id) return error(res, 'Missing required parameter: id');
-      const data = await jioGet('content.getAlbumDetails', { id });
+      const data = await jioGet('content.getAlbumDetails', { albumid: id });
       if (!data) return error(res, 'Album not found', 404);
       return success(res, {
-        id: data.id,
-        title: data.title || data.album || 'Unknown',
-        artist: data.artist || data.singers || 'Unknown',
+        id: data.albumid || data.id || id,
+        title: data.title || data.name || 'Unknown',
+        artist: data.primary_artists || data.artist || 'Unknown',
         year: data.year || '',
         image: (data.image || '').replace(/\d+x\d+\./, '500x500.'),
         songs: data.songs ? data.songs.map(s => parseTrack(s, decryptUrl)) : [],
@@ -97,16 +124,20 @@ module.exports = async (req, res) => {
     if (path === '/api/artist') {
       const id = q.get('id');
       if (!id) return error(res, 'Missing required parameter: id');
-      const data = await jioGet('artist.getArtistPageDetails', { id });
+      const data = await jioGet('artist.getArtistPageDetails', { artistId: id });
       if (!data) return error(res, 'Artist not found', 404);
+      const topSongs = data.topSongs?.songs || data.songs || [];
+      const topAlbums = data.topAlbums?.albums || data.albums || [];
       return success(res, {
-        id: data.id,
+        id: data.artistId || data.id || id,
         title: data.name || data.title || 'Unknown',
         image: (data.image || '').replace(/\d+x\d+\./, '500x500.'),
-        songs_count: data.songs ? data.songs.length : 0,
-        albums_count: data.albums ? data.albums.length : 0,
-        top_songs: data.songs ? data.songs.slice(0, 10).map(s => parseTrack(s, decryptUrl)) : [],
-        top_albums: data.albums ? data.albums.slice(0, 10).map(s => parseAlbum(s)) : [],
+        follower_count: data.follower_count || '',
+        is_verified: data.isVerified || false,
+        songs_count: topSongs.length,
+        albums_count: topAlbums.length,
+        top_songs: topSongs.slice(0, 10).map(s => parseTrack(s, decryptUrl)),
+        top_albums: topAlbums.slice(0, 10).map(s => parseAlbum(s)),
       });
     }
 
@@ -124,7 +155,7 @@ module.exports = async (req, res) => {
       const id = q.get('id');
       const page = q.get('page') || '0';
       if (!id) return error(res, 'Missing required parameter: id');
-      const data = await jioGet('artist.getArtistMoreSong', { id, page, sortBy: 'popularity', sortOrder: 'desc' });
+      const data = await jioGet('artist.getArtistMoreSong', { artistId: id, page, sortBy: 'popularity', sortOrder: 'desc' });
       if (!data) return error(res, 'No songs found', 404);
       const songs = data.songs ? data.songs.map(s => parseTrack(s, decryptUrl)) : [];
       return success(res, songs);
@@ -135,7 +166,7 @@ module.exports = async (req, res) => {
       const id = q.get('id');
       const page = q.get('page') || '0';
       if (!id) return error(res, 'Missing required parameter: id');
-      const data = await jioGet('artist.getArtistMoreAlbum', { id, page, sortBy: 'popularity', sortOrder: 'desc' });
+      const data = await jioGet('artist.getArtistMoreAlbum', { artistId: id, page, sortBy: 'popularity', sortOrder: 'desc' });
       if (!data) return error(res, 'No albums found', 404);
       const albums = data.albums ? data.albums.map(s => parseAlbum(s)) : [];
       return success(res, albums);
@@ -167,10 +198,13 @@ module.exports = async (req, res) => {
     // ── /api/trending ──
     if (path === '/api/trending') {
       const data = await jioGet('content.getTrending');
-      if (!data) return error(res, 'Could not fetch trending', 500);
-      let songs = data.songs || [];
-      if (typeof songs === 'object' && !Array.isArray(songs)) songs = songs.songs || [];
-      return success(res, songs.slice(0, 30).map(s => parseTrack(s, decryptUrl)));
+      if (!data || !Array.isArray(data)) return error(res, 'Could not fetch trending', 500);
+      // Trending returns [{type, details, weight, language}, ...]
+      const songs = data
+        .filter(item => item.type === 'song' && item.details)
+        .slice(0, 30)
+        .map(item => parseTrack(item.details, decryptUrl));
+      return success(res, songs);
     }
 
     // ── /api/browse ──
