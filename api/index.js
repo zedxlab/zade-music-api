@@ -1,4 +1,4 @@
-const { jioGet, parseTrack, parseAlbum, parseArtist, parsePlaylist } = require('../lib/jiosaavn');
+const { jioGet, parseTrack, parseAlbum, parseArtist, parsePlaylist, parseAutocompleteTrack } = require('../lib/jiosaavn');
 const { decryptUrl } = require('../lib/decrypt');
 const { success, error } = require('../lib/response');
 
@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
       const data = await jioGet('autocomplete.get', { query: query });
       if (!data) return error(res, 'No results found', 404);
       const songs = data.songs?.data || [];
-      return success(res, songs.slice(0, limit).map(s => parseTrack(s, decryptUrl)));
+      return success(res, songs.slice(0, limit).map(parseAutocompleteTrack));
     }
 
     // ── /api/search/albums ──
