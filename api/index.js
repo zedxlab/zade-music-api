@@ -1,4 +1,4 @@
-const { jioGet, parseTrack, parseAlbum, parseArtist, parsePlaylist, parseAutocompleteTrack } = require('../lib/jiosaavn');
+const { jioGet, parseTrack, parseAlbum, parseArtist, parsePlaylist } = require('../lib/jiosaavn');
 const { decryptUrl } = require('../lib/decrypt');
 const { success, error } = require('../lib/response');
 
@@ -39,14 +39,15 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ── /api/search (songs only) — uses autocomplete.get like Termux script ──
+    // ── /api/search (songs only) — uses autocomplete.get for popular results ──
     if (path === '/api/search') {
       const query = q.get('q');
       if (!query) return error(res, 'Missing required parameter: q');
-      const data = await jioGet('autocomplete.get', { query });
+      // autocomplete.get returns popular songs first (like Termux script)
+      const data = await jioGet('autocomplete.get', { query: query });
       if (!data) return error(res, 'No results found', 404);
-      const songs = data.songs?.data || data.songs || [];
-      return success(res, songs.slice(0, limit).map(parseAutocompleteTrack));
+      const songs = data.songs?.data || [];
+      return success(res, songs.slice(0, limit).map(s => parseTrack(s, decryptUrl)));
     }
 
     // ── /api/search/albums ──
