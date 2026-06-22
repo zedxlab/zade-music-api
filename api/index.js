@@ -43,11 +43,12 @@ module.exports = async (req, res) => {
     if (path === '/api/search') {
       const query = q.get('q');
       if (!query) return error(res, 'Missing required parameter: q');
-      // Build a unique URL to bust Vercel edge cache
-      const ts = Date.now();
-      const data = await jioGet('autocomplete.get', { query: query, _t: ts });
+      const data = await jioGet('autocomplete.get', { query });
       if (!data) return error(res, 'No results found', 404);
-      const songs = data.songs?.data || [];
+      // Debug: log the structure
+      console.log('Search response keys:', Object.keys(data));
+      console.log('Songs type:', typeof data.songs, Array.isArray(data.songs));
+      const songs = data.songs?.data || data.songs || [];
       return success(res, songs.slice(0, limit).map(parseAutocompleteTrack));
     }
 
