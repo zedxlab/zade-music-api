@@ -18,9 +18,9 @@ module.exports = async (req, res) => {
     // ── Root ──
     if (path === '/' || path === '') {
       return success(res, {
-        name: 'Zade JioSaavn API',
+        name: 'Zade Music API',
         version: '1.0.0',
-        description: 'JioSaavn Music API — Search, Stream 320kbps, Lyrics, Albums, Artists, Playlists, Trending',
+        description: 'Music Streaming API — Search, Stream 320kbps, Lyrics, Albums, Artists, Playlists, Trending',
         endpoints: {
           search: '/api/search?q=kesariya&limit=10',
           song: '/api/song?id=rjkrTnma',
