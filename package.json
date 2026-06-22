@@ -5,6 +5,7 @@
   "main": "api/index.js",
   "scripts": {
     "start": "vercel dev",
+    "build": "echo 'no build needed'",
     "deploy": "vercel deploy --prod"
   },
   "engines": {
